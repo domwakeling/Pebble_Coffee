@@ -1,0 +1,23 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "dominic.wakeling@btinternet.co",
+    "longName": "Coffee Guru",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "Coffee Guru",
+    "targetPlatforms": [
+        "basalt"
+    ],
+    "uuid": "46dc1f89-2175-4db9-b998-097a13fd7343",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
