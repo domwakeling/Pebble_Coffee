@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "gpath_builder.h"
+#include "draw_layers.h"
 
 /********************************************/
 /*************** DECLARATIONS ***************/
@@ -17,32 +18,34 @@ static PropertyAnimation *animations[3];
 
 /* declaration of variables */
 static int active = 0;
+static int drawingItem[2];
 
-/* declaration of constants which need #define statements */
+/* declaration of constants with #define statements */
 #define BG_COLOUR GColorDarkGray
 #define TEXT_COLOUR GColorWhite
 #define BAR_BG_COLOUR GColorBlack
 #define ICON_COLOUR GColorWhite
 #define SCREEN_HEIGHT 168
-#define HEADER_WIDTH 144
 #define HEADER_HEIGHT 27
 #define DETAIL_OFFSET 3
 #define DETAIL_SPACE 5
-#define BAR_WIDTH 17
-#define BAR_SPACE 15
+#define BAR_WIDTH 15
+#define BAR_SPACE 10
 #define BAR_ROUNDING 3
-#define TRIANGLE_BASE 13
-#define TRIANGLE_HEIGHT 7
+#define TRIANGLE_BASE 11
+#define TRIANGLE_HEIGHT 6
 #define ICON_SPACE 7
+#define HEADER_WIDTH 144 - BAR_WIDTH
 #define LAYER 0
 #define HEADER 1
 #define BACKGROUND 2
-#define ANIMATION_SPEED 250
+#define ANIMATION_SPEED 500
 #define HEADER_FONT FONT_KEY_GOTHIC_24_BOLD
+#define DETAIL_FONT FONT_KEY_GOTHIC_18
 
 /* declarations for functions which are implemented below (for improved code legibility) */
 static TextLayer* get_header_layer();
-static Layer* get_action_bar_layer(Window *window);			// not a real action bar
+static Layer* get_action_bar_layer(Window *window);							// not a real action bar
 static Layer* get_icon_layer(Window *window, int position);
 static void draw_action_bar_round_rect(Layer *l, GContext *ctx);
 static void draw_arrow_up(Layer *l, GContext *ctx);
@@ -88,6 +91,7 @@ static void detail_window_pop() {
 /**** CLICK HANDLERS FOR GRAPHIC WINDOW *****/
 /********************************************/
 
+/* called when animations end - remove "covered" layers and switch active */
 static void layer_animation_ended(Animation *animation, bool finished, void *data) {
 	/* we assume at this point that our animations are ALL done */
 	layer_remove_from_parent(graphicDrawLayer[active]);
@@ -98,6 +102,7 @@ static void layer_animation_ended(Animation *animation, bool finished, void *dat
 	active = 1 - active;
 }
 
+/* preps for animations and schedules them */
 static void set_for_animation() {
 	/* calculate inactive layer */
 	int inactive = 1 - active;
@@ -137,14 +142,22 @@ static void set_for_animation() {
 		.stopped = (AnimationStoppedHandler) layer_animation_ended,
 	}, NULL);
 	
+	/* scheduled animations */
 	animation_schedule((Animation *)animations[BACKGROUND]);
 	animation_schedule((Animation *)animations[LAYER]);
 	animation_schedule((Animation *)animations[HEADER]);
 }
 
+/* specific preparation after pushing the "up" button before handing off to set_for_animation */
 static void push_graphic_window_up() {
 	/* calculate inactive layer */
 	int inactive = 1 - active;
+	
+	/* get number of next item up and assign */
+	drawingItem[inactive] = next_up(drawingItem[active]);
+	
+	/* change the text on the header */
+	text_layer_set_text(graphicHeader[inactive], header_text(drawingItem[inactive]));
 	
 	/* move inactive text layer and layer frames to be off screen */
 	move_layer_below_screen(graphicDrawLayer[inactive]);
@@ -155,9 +168,16 @@ static void push_graphic_window_up() {
 	set_for_animation();
 }
 
+/* specific preparation after pushing the "down" button before handing off to set_for_animation */
 static void push_graphic_window_down() {
 	/* calculate inactive layer */
 	int inactive = 1 - active;
+	
+	/* get number of next item down and assign */
+	drawingItem[inactive] = next_down(drawingItem[active]);
+	
+	/* change the text on the header */
+	text_layer_set_text(graphicHeader[inactive], header_text(drawingItem[inactive]));
 	
 	/* move inactive text layer and layer frames to be off screen */
 	move_layer_above_screen(graphicDrawLayer[inactive]);
@@ -194,14 +214,17 @@ static void detail_window_load(Window *window) {
 	
 	/* get new (formatted) header layer, set text, add to window*/
 	detailHeader = get_header_layer();
-	text_layer_set_text(detailHeader, "Window 2");
+	text_layer_set_text(detailHeader, header_text(drawingItem[active]));
 	layer_add_child(w, text_layer_get_layer(detailHeader));
 	
 	/* make detailed textLayer - will abstract this later */
 	int width = layer_get_frame(w).size.w - BAR_WIDTH - 2 * DETAIL_OFFSET;
 	int height = layer_get_frame(w).size.h - HEADER_HEIGHT - DETAIL_SPACE - DETAIL_OFFSET;
 	detailText = text_layer_create(GRect(DETAIL_OFFSET, HEADER_HEIGHT + DETAIL_SPACE, width, height));
-	text_layer_set_background_color(detailText, GColorBlue);
+	text_layer_set_text(detailText, detail_text(drawingItem[active]));
+	text_layer_set_background_color(detailText, GColorClear);
+	text_layer_set_text_color(detailText, TEXT_COLOUR);
+	text_layer_set_font(detailText, fonts_get_system_font(DETAIL_FONT));
 	layer_add_child(w, text_layer_get_layer(detailText));
 	
 	/* add the 'faux' action bar */
@@ -250,9 +273,8 @@ static void graphic_window_load(Window *window) {
 	/* get new (formatted) header layers, set text, add the base one to the window */
 	graphicHeader[0] = get_header_layer();
 	graphicHeader[1] = get_header_layer();
-	text_layer_set_text(graphicHeader[0], "Window 1-0");
-	text_layer_set_text(graphicHeader[1], "Window 1-1");
-	layer_add_child(w, text_layer_get_layer(graphicHeader[0]));
+	text_layer_set_text(graphicHeader[active], header_text(drawingItem[active]));
+	layer_add_child(w, text_layer_get_layer(graphicHeader[active]));
 	
 	/* add the 'faux' action bar */
 	actionBarLayer[0] = get_action_bar_layer(window);
@@ -298,6 +320,7 @@ static void graphic_window_unload(Window *window) {
 	for (int i = 0; i < 3; i++) {
 		layer_destroy(actionBarIconGraphic[i]);
 	}
+	layer_destroy(graphicBackgroundLayer);
 }
 
 /********************************************/
@@ -368,6 +391,7 @@ static void draw_action_bar_round_rect(Layer *layer, GContext *ctx) {
 /**** HELPER METHODS - ICONS IN ACTION BAR ****/
 /**********************************************/
 
+/* draw up arrow as icon in the 'faux' action bar */
 static void draw_arrow_up(Layer *layer, GContext *ctx) {
 	int height = layer_get_frame(layer).size.h;
 	int width = layer_get_frame(layer).size.w;
@@ -381,6 +405,7 @@ static void draw_arrow_up(Layer *layer, GContext *ctx) {
 	gpath_destroy(tempPath);
 }
 
+/* draw down arrow as icon in the 'faux' action bar */
 static void draw_arrow_down(Layer *layer, GContext *ctx) {
 	int height = layer_get_frame(layer).size.h;
 	int width = layer_get_frame(layer).size.w;
@@ -394,6 +419,7 @@ static void draw_arrow_down(Layer *layer, GContext *ctx) {
 	gpath_destroy(tempPath);
 }
 
+/* draw right arrow as icon in the 'faux' action bar */
 static void draw_arrow_right(Layer *layer, GContext *ctx) {
 	int height = layer_get_frame(layer).size.h;
 	int width = layer_get_frame(layer).size.w;
@@ -407,6 +433,7 @@ static void draw_arrow_right(Layer *layer, GContext *ctx) {
 	gpath_destroy(tempPath);
 }
 
+/* draw left arrow as icon in the 'faux' action bar */
 static void draw_arrow_left(Layer *layer, GContext *ctx) {
 	int height = layer_get_frame(layer).size.h;
 	int width = layer_get_frame(layer).size.w;
@@ -456,6 +483,7 @@ static Layer* get_icon_layer(Window *window, int position) {
 /*** HELPER METHODS - BACKGROUND DRAW PROC ****/
 /**********************************************/
 
+/* graphicBackgroundLayer is always a rect in the background colour to mask active layers */
 static void background_update_proc(Layer *l, GContext *ctx) {
 	int width = layer_get_frame(l).size.w;
 	int height = layer_get_frame(l).size.h;
@@ -467,6 +495,7 @@ static void background_update_proc(Layer *l, GContext *ctx) {
 /*** HELPER METHODS - POSITIONS FOR LAYERS ****/
 /**********************************************/
 
+/* change a layer's frame so it's below the screen (origin.y is >= 168) */
 static void move_layer_below_screen(Layer *l) {
 	int xPos = layer_get_frame(l).origin.x;
 	int yPos = layer_get_frame(l).origin.y;
@@ -478,6 +507,7 @@ static void move_layer_below_screen(Layer *l) {
 	layer_set_frame(l, GRect(xPos,yPos,width,height));
 }
 
+/* change a layer's frame so it's above the screen (origin.y is < 0) */
 static void move_layer_above_screen(Layer *l) {
 	int xPos = layer_get_frame(l).origin.x;
 	int yPos = layer_get_frame(l).origin.y;
@@ -494,15 +524,9 @@ static void move_layer_above_screen(Layer *l) {
 /**********************************************/
 
 static void update_layer_1_proc(Layer *l, GContext *ctx) {
-	int width = layer_get_frame(l).size.w;
-	int height = layer_get_frame(l).size.h;
-	graphics_context_set_fill_color(ctx, GColorBlue);
-	graphics_fill_rect(ctx, GRect(0,0,width,height), 0, GCornerNone);
+	draw_graphics_image(drawingItem[0], ctx);
 }
 
 static void update_layer_2_proc(Layer *l, GContext *ctx) {
-	int width = layer_get_frame(l).size.w;
-	int height = layer_get_frame(l).size.h;
-	graphics_context_set_fill_color(ctx, GColorRed);
-	graphics_fill_rect(ctx, GRect(0,0,width,height), 0, GCornerNone);
+	draw_graphics_image(drawingItem[1],ctx);
 }
