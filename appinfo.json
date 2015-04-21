@@ -7,7 +7,14 @@
     "longName": "Coffee Guru",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "images/CoffeeBean.png",
+                "menuIcon": true,
+                "name": "COFFEE_BEAN",
+                "type": "png"
+            }
+        ]
     },
     "sdkVersion": "3",
     "shortName": "Coffee Guru",
