@@ -19,7 +19,7 @@
 #define OUTLINE_COLOUR GColorDarkGray
 #define FOAM_COLOUR GColorPastelYellow
 #define WATER_COLOUR GColorBabyBlueEyes
-#define MILK_COLOUR GColorWhite
+#define MILK_COLOUR GColorPastelYellow
 
 char *headerText[ENTRIES];
 char *detailText[ENTRIES];
@@ -263,7 +263,7 @@ void draw_espresso_shot(GContext *ctx) {
 	gpath_destroy(temp);
 }
 
-/* helper routine for drawing foam and milke to top */
+/* helper routine for drawing water to top */
 void draw_to_top(GContext *ctx, GColor color) {
 	/* make an epmty GPathBuilder */
 	GPathBuilder *builder = gpath_builder_create(MAX_POINTS);
@@ -291,9 +291,29 @@ void draw_to_top(GContext *ctx, GColor color) {
 	gpath_destroy(temp);
 }
 
-/* draw foam to top, using helper function */
+/* draw foam to top */
 void draw_foam_to_top(GContext *ctx) {
-	draw_to_top(ctx, FOAM_COLOUR);
+	//draw_to_top(ctx, FOAM_COLOUR);
+	
+	graphics_context_set_stroke_color(ctx, FOAM_COLOUR);
+	
+	for(int i = 10; i <= 111; i += 4) {
+			graphics_draw_circle(ctx, GPoint( i, 37), 3);
+	}
+	
+	for(int i = 12; i <= 109; i += 4) {
+			graphics_draw_circle(ctx, GPoint( i, 42), 3);
+	}
+	
+	for(int i = 14; i <= 107; i += 4) {
+			graphics_draw_circle(ctx, GPoint( i, 47), 3);
+	}
+	
+	for(int i = 16; i <= 105; i += 4) {
+			graphics_draw_circle(ctx, GPoint( i, 52), 3);
+	}
+	
+	
 }
 
 /* draw water to top, using helper function */
@@ -387,28 +407,35 @@ void draw_milk_to_low(GContext *ctx) {
 
 /* draw foam just above the espresso shot */
 void draw_foam_to_very_low(GContext *ctx) {
+	
+	graphics_context_set_stroke_color(ctx, FOAM_COLOUR);
+	
+	for(int i = 20; i <= 100; i += 3) {
+		graphics_draw_circle(ctx, GPoint( i, 72), 4);
+	}
+	
 	/* make an epmty GPathBuilder */
-	GPathBuilder *builder = gpath_builder_create(MAX_POINTS);
+	//GPathBuilder *builder = gpath_builder_create(MAX_POINTS);
 	
 	/* build the path */
-	gpath_builder_move_to_point(builder, GPoint(18,67));
-	gpath_builder_line_to_point(builder, GPoint(102,67));
-	gpath_builder_curve_to_point(builder, GPoint(60,100), GPoint(102,85), GPoint(75,100));
-	gpath_builder_curve_to_point(builder, GPoint(18,67), GPoint(40,100), GPoint(18,85));
+	//gpath_builder_move_to_point(builder, GPoint(18,67));
+	//gpath_builder_line_to_point(builder, GPoint(102,67));
+	//gpath_builder_curve_to_point(builder, GPoint(60,100), GPoint(102,85), GPoint(75,100));
+	//gpath_builder_curve_to_point(builder, GPoint(18,67), GPoint(40,100), GPoint(18,85));
 	
 	/* convert to a GPath */
-	GPath *temp = gpath_builder_create_path(builder);
+	//GPath *temp = gpath_builder_create_path(builder);
 	
 	/* prepare context */
-	graphics_context_set_stroke_color(ctx, OUTLINE_COLOUR);
-	graphics_context_set_stroke_width(ctx, OUTLINE_STROKE);
-	graphics_context_set_fill_color(ctx, FOAM_COLOUR);
+	//graphics_context_set_stroke_color(ctx, OUTLINE_COLOUR);
+	//graphics_context_set_stroke_width(ctx, OUTLINE_STROKE);
+	//graphics_context_set_fill_color(ctx, FOAM_COLOUR);
 	
 	/* stroke path then fill path */
-	gpath_draw_filled(ctx, temp);
-	gpath_draw_outline(ctx, temp);
+	//gpath_draw_filled(ctx, temp);
+	//gpath_draw_outline(ctx, temp);
 	
 	/* destroy objects */
-	gpath_builder_destroy(builder);
-	gpath_destroy(temp);
+	//gpath_builder_destroy(builder);
+	//gpath_destroy(temp);
 }
